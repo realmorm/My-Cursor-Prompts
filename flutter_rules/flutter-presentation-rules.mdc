@@ -21,6 +21,31 @@ alwaysApply: false
 - Use Consumer/ConsumerWidget only in screens and sections, not in widgets
 - This keeps state management scope simple and maintainable
 
+### Widget Implementation Guidelines
+
+- **Callback Methods**: Place callback methods above the build function with descriptive names
+
+  ```dart
+  void onPressedSubmitButton() {
+    // Handle submit logic
+  }
+
+  void onTappedUserProfile() {
+    // Handle profile tap
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton(
+      onPressed: onPressedSubmitButton,
+      child: Text('Submit'),
+    );
+  }
+  ```
+
+- Use descriptive method names that indicate the action and UI element
+- Keep callback methods close to the build function for better readability
+
 ### General Guidelines
 
 - Adapt to existing project architecture while maintaining clean code principles
