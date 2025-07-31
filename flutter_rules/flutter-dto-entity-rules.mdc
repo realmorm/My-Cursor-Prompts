@@ -1,0 +1,241 @@
+---
+description: Focuses on DTO and Entity design patterns, including Freezed usage, nullable field handling, and data transformation rules.
+globs:
+alwaysApply: false
+---
+
+## DTO & Entity Design Rules
+
+### Folder Structure
+
+- **data/models/**: DTO classes for API/DB raw data (suffix: `Dto`)
+- **domain/entities/**: Business logic models (suffix: `Entity`)
+- **domain/repositories/**: Data access interfaces using entities
+
+### Naming Conventions
+
+#### Entity Classes
+- **Must end with `Entity` suffix**
+  ```dart
+  // ✅ Good
+  class ModelEntity { }
+  class UserProfileEntity { }
+  
+  // ❌ Bad
+  class Model { }
+  class UserProfile { }
+  ```
+
+#### DTO Classes  
+- **Response DTOs**: Must end with `Dto` suffix
+- **Request DTOs**: Must end with `ReqDto` suffix
+
+  ```dart
+  // ✅ Good - Response DTOs
+  class ModelDto { }
+  class UserProfileDto { }
+  
+  // ✅ Good - Request DTOs  
+  class CreateUserReqDto { }
+  class UpdateModelReqDto { }
+  
+  // ❌ Bad
+  class Model { }
+  class ModelData { }
+  class ModelRequest { }
+  ```
+
+### DTO Design Rules
+
+#### Basic DTO Structure
+DTOs should be **simple data containers** for API/DB communication:
+
+```dart
+@freezed  
+class ModelDto with _$ModelDto {
+  factory ModelDto({
+    // All fields typically nullable (API data uncertainty)
+    int? id,
+    String? name,
+    int? count,
+    double? price,
+    List<String>? tags,
+    bool? isActive,
+    DateTime? createdAt,
+    String? thumbnailUrl,
+  }) = _ModelDto;
+
+  factory ModelDto.fromJson(Map<String, dynamic> json) =>
+      _$ModelDtoFromJson(json);
+}
+```
+
+**Key principles:**
+- **No @Default annotations** - preserve original API/DB state
+- **Most fields nullable** - handle uncertain external data
+- **Include fromJson/toJson** - for serialization
+- **Keep logic-free** - pure data containers
+
+#### Request DTO Structure
+Request DTOs for sending data to APIs/servers:
+
+```dart
+@freezed  
+class CreateUserReqDto with _$CreateUserReqDto {
+  factory CreateUserReqDto({
+    // Required fields for client-controlled data
+    required String name,
+    required String email,
+    
+    // Optional fields only when business logic allows
+    int? age,
+    String? profileImage,
+  }) = _CreateUserReqDto;
+
+  factory CreateUserReqDto.fromJson(Map<String, dynamic> json) =>
+      _$CreateUserReqDtoFromJson(json);
+}
+```
+
+**Key differences from Response DTOs:**
+- **Mostly required fields** - client has control over data
+- **Nullable only for optional business data**
+- **Entity → ReqDto conversion**: `user.toCreateReqDto()`
+
+### Entity Design Rules
+
+#### Freezed Implementation
+- **Always use Freezed** for immutable entities with proper annotations
+- **Include required parts** for code generation
+- **Add private constructor** for extension methods
+
+```dart
+@freezed
+class ModelEntity with _$ModelEntity {
+  factory ModelEntity({
+    required int id,
+    required String name,
+    String? thumbnailUrl,
+    required DateTime createdAt,
+  }) = _ModelEntity;
+
+  factory ModelEntity.fromJson(Map<String, dynamic> json) =>
+      _$ModelEntityFromJson(json);
+
+  ModelEntity._(); // Enable extension methods
+
+  // Mapper methods here...
+}
+```
+
+### DTO ↔ Entity Conversion Rules
+
+#### Nullable Field Handling Strategy
+Use **Freezed @Default annotations** for Entity stability. Avoid duplicate null-checks in mapper methods:
+
+```dart
+@freezed
+class ModelEntity with _$ModelEntity {
+  factory ModelEntity({
+    // Provide defaults for stable types
+    @Default('') String name,           // Empty string for text
+    @Default(0) int count,              // Zero for numbers  
+    @Default(-1) int id,                // -1 for IDs when 0 has meaning
+    @Default(0.0) double price,         // Zero for decimals
+    @Default([]) List<String> tags,     // Empty list for collections
+    
+    // Keep nullable for business-meaningful types
+    bool? isActive,                     // true/false both have meaning
+    DateTime? createdAt,                // Date/time often optional
+    String? thumbnailUrl,               // Optional fields stay nullable
+  }) = _ModelEntity;
+  
+  ModelEntity._();
+}
+```
+
+#### Required Mapper Methods
+Every Entity **must implement** both conversion methods:
+
+```dart
+// 1. DTO → Entity (static method)
+static ModelEntity fromDto(ModelDto dto) {
+  return ModelEntity(
+    // No null-checks needed - @Default handles it automatically
+    name: dto.name,                     // null → @Default('')
+    count: dto.count,                   // null → @Default(0)
+    id: dto.id,                         // null → @Default(-1)
+    
+    // Nullable fields passed as-is (preserve null state)
+    isActive: dto.isActive,             // Preserves null/true/false
+    createdAt: dto.createdAt,           // Preserves null/DateTime
+    thumbnailUrl: dto.thumbnailUrl,     // Preserves null/String
+  );
+}
+
+// 2. Entity → DTO (instance method)
+ModelDto toDto() {
+  return ModelDto(
+    id: id,                             // @Default values convert back
+    name: name,
+    count: count,
+    isActive: isActive,                 // null-safe conversion
+    createdAt: createdAt,
+    thumbnailUrl: thumbnailUrl,
+  );
+}
+```
+
+#### Method Naming Standards
+- **DTO to Entity**: `static EntityName fromDto(DtoName dto)`
+- **Entity to DTO**: `DtoName toDto()`
+- **Consistent across all entities** - no variations
+
+### Data Transformation Guidelines
+
+#### 1:1 Mapping Philosophy
+- **Start simple**: Initial entities can mirror DTO structure 1:1
+- **Evolve naturally**: Add business logic methods when needed
+- **Don't force complexity**: Avoid artificial differences between DTO/Entity
+
+```dart
+// ✅ Good - Simple start
+class ModelBackgroundEntity {
+  final int modelId;
+  final int backgroundId;
+  
+  // Basic mappers only
+}
+
+// ✅ Good - Natural evolution when business logic emerges
+class ModelBackgroundEntity {
+  final int modelId;
+  final int backgroundId;
+  
+  // Business methods added when needed
+  bool isCompatibleWith(PoseEntity pose) => // logic
+  List<String> getValidationErrors() => // logic
+}
+```
+
+#### Repository Usage Pattern
+```dart
+// Repository should work with Entities, not DTOs
+class SupabaseRepository {
+  Future<List<ModelEntity>> getAllModels() async {
+    final response = await supabaseClient.from('models').select();
+    
+    return (response as List)
+        .map((json) => ModelEntity.fromDto(ModelDto.fromJson(json)))
+        .toList();
+  }
+}
+```
+
+### General Guidelines
+
+- **Keep conversion logic simple** - avoid complex transformations in mappers
+- **Handle nullable fields gracefully** - provide sensible defaults in Entity
+- **Validate in Entity constructor** when business rules require it
+- **Use descriptive property names** that reflect business domain, not DB schema
+- **Maintain immutability** - all entities should be immutable via Freezed
