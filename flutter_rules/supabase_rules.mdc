@@ -1,0 +1,50 @@
+---
+description: Supabase project configuration and database conventions for ai-lookbook project.
+globs:
+alwaysApply: false
+---
+
+## Current Project Configuration
+
+### Active Supabase Project
+
+- **Project Name**: ai-lookbook
+- **Region**: ap-northeast-2 (Seoul)
+- **Database**: PostgreSQL 17.x
+
+### Connection Details
+
+- Project configuration is in `lib/_core/constants/config.dart`
+- Use the configured project for all Supabase operations
+
+## Database Conventions
+
+### Table Naming
+
+- Use snake_case for table and column names
+- Include standard fields: created_at, updated_at, is_deleted
+
+### Authentication
+
+- Use Supabase Auth for user management
+- Reference user sessions through supabase_auth_viewmodel.dart
+
+### RLS (Row Level Security)
+
+- Enable RLS on all tables containing user data
+- Implement appropriate policies for data access control
+
+## Development Guidelines
+
+### Migration Strategy
+
+- Always check existing tables and schema before creating new ones
+- Use Supabase CLI for schema migrations when possible
+- Test migrations on development branch before production
+- Keep migration files organized and well-documented
+
+### Data Access Patterns
+
+- Use repository pattern without separate datasource layer
+- Implement proper error handling for network issues
+- Cache frequently accessed data appropriately
