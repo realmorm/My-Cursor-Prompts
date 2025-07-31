@@ -1,13 +1,30 @@
 ---
-description: Focuses on UI-related rules within Flutter feature's presentation layer, including BLoC, pages, and widgets.
-globs: 
+description: Focuses on UI-related rules within Flutter feature's presentation layer, including screens, viewmodels, widgets, and sections organization.
+globs:
 alwaysApply: false
 ---
-- Adapt to existing project architecture while maintaining clean code principles.
-- Use Flutter 3.x features and Material 3 design.
-- Follow proper widget composition.
-- Keep widgets small and focused.
-- Implement proper routing using GoRouter.
-- Use proper form validation.
-- Implement proper error boundaries.
-- Follow proper accessibility guidelines.
+
+## Presentation Layer Architecture
+
+### Folder Structure
+
+- **screens/**: Main UI screens registered in go_router.dart (must update routes when adding new screens)
+- **sections/**: Split complex screens into manageable sections when needed
+- **widgets/**: Small, reusable UI components (must NOT reference viewmodels)
+- **viewmodels/**: State management classes using Riverpod providers
+
+### State Management Rules
+
+- Only **screens** and **sections** can reference viewmodels
+- **widgets** must receive data through parameters, never direct viewmodel access
+- ViewModels should use repositories from adjacent **domain** folder when data is needed
+- Use Consumer/ConsumerWidget only in screens and sections, not in widgets
+- This keeps state management scope simple and maintainable
+
+### General Guidelines
+
+- Adapt to existing project architecture while maintaining clean code principles
+- Follow proper widget composition and keep widgets small and focused
+- Implement proper routing using GoRouter
+- Use proper form validation and error boundaries
+- Follow proper accessibility guidelines
