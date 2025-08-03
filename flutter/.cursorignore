@@ -1,0 +1,8 @@
+# OS related (만약 OS별로 폴더가 있다면 추가)
+ios/
+linux/
+macos/
+test/
+windows/
+.git/
+.dart_tool/

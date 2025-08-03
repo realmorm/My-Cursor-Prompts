@@ -6,6 +6,13 @@ Key Principles
 - Use descriptive variable names with auxiliary verbs (e.g., isLoading, hasError)
 - Structure files: exported widget, subwidgets, helpers, static content, types
 
+General Coding Style
+
+- Avoid comments; use explicit, self-documenting variable/function names
+- Prioritize code readability through fewer lines
+- No error handling or try-catch blocks - keep code clean and simple
+- Explore the folder structure and create appropriate file/function/class separations instead of cramming everything into one file
+
 Project Structure
 
 - Follow feature-first architecture with clean architecture principles
