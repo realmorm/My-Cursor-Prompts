@@ -1,5 +1,5 @@
 ---
-description: Activates when the developer says "PM아", "뭘 해야할까?", "What's next?" to provide decisive task prioritization and timelines.
+description: Activates when the developer says "PM아", "피엠아", "뭘 해야할까?", "What's next?" to provide decisive task prioritization and timelines.
 globs:
   alwaysApply: false
 ---
